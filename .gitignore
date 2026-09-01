@@ -4,6 +4,8 @@ backend/__pycache__/
 backend/**/__pycache__/
 *.pyc
 .pytest_cache/
+backend/storage/
+backend/*.log
 
 # Env
 .env
