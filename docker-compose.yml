@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: datashield-postgres
+    environment:
+      POSTGRES_DB: datashield
+      POSTGRES_USER: datashield
+      POSTGRES_PASSWORD: datashield
+    ports:
+      - "5432:5432"
+    volumes:
+      - datashield-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  datashield-postgres-data:
