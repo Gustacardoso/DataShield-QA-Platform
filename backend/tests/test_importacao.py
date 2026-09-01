@@ -62,6 +62,26 @@ def test_upload_json_envelopado_com_dados_aninhados() -> None:
     assert corpo["colunas"] == ["nome", "cpf", "endereco.cidade", "endereco.estado"]
 
 
+def test_exclusao_em_lote() -> None:
+    ids = []
+    for nome in ("a.csv", "b.csv"):
+        arquivo = io.BytesIO(b"col\nvalor\n")
+        response = client.post(
+            "/api/importacao/upload",
+            files={"arquivo": (nome, arquivo, "text/csv")},
+        )
+        ids.append(response.json()["id"])
+
+    exclusao = client.request("DELETE", "/api/importacao/", json={"ids": ids})
+    assert exclusao.status_code == 204
+
+    listagem = client.get("/api/importacao/").json()
+    assert all(item["id"] not in ids for item in listagem)
+
+    for excluido_id in ids:
+        assert client.get(f"/api/importacao/{excluido_id}").status_code == 404
+
+
 def test_upload_formato_invalido() -> None:
     arquivo = io.BytesIO(b"conteudo qualquer")
 

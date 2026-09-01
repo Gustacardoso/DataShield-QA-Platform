@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from sqlalchemy import select
@@ -7,7 +8,11 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.storage import save_upload_file
 from app.models.arquivo_processado import ArquivoProcessado
-from app.modules.importacao.schemas import ArquivoImportadoDetalhe, ArquivoImportadoResponse
+from app.modules.importacao.schemas import (
+    ArquivoImportadoDetalhe,
+    ArquivoImportadoResponse,
+    ExcluirArquivosRequest,
+)
 from app.modules.importacao.service import formato_da_extensao, ler_arquivo
 
 router = APIRouter(prefix="/api/importacao", tags=["Importação"])
@@ -49,3 +54,18 @@ def obter_arquivo(arquivo_id: int, db: Session = Depends(get_db)) -> ArquivoProc
     if registro is None:
         raise HTTPException(status_code=404, detail="Arquivo não encontrado")
     return registro
+
+
+@router.delete("/", status_code=204)
+def excluir_arquivos(payload: ExcluirArquivosRequest, db: Session = Depends(get_db)) -> None:
+    if not payload.ids:
+        raise HTTPException(status_code=400, detail="Nenhum id informado")
+
+    stmt = select(ArquivoProcessado).where(ArquivoProcessado.id.in_(payload.ids))
+    registros = db.scalars(stmt).all()
+
+    for registro in registros:
+        Path(registro.caminho_armazenado).unlink(missing_ok=True)
+        db.delete(registro)
+
+    db.commit()

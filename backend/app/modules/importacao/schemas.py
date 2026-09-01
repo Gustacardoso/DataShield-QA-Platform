@@ -16,3 +16,7 @@ class ArquivoImportadoResponse(BaseModel):
 
 class ArquivoImportadoDetalhe(ArquivoImportadoResponse):
     preview: list[dict]
+
+
+class ExcluirArquivosRequest(BaseModel):
+    ids: list[int]
