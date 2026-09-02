@@ -1,12 +1,12 @@
 from pydantic import BaseModel
 
 
-class RegraMascaramento(BaseModel):
-    tipo_dado: str
-    exemplo_antes: str
-    exemplo_depois: str
+class AplicarMascaramentoRequest(BaseModel):
+    colunas: list[str] | None = None
 
 
 class MascaramentoResponse(BaseModel):
-    mensagem: str
-    regras: list[RegraMascaramento]
+    arquivo_id: int
+    nome_arquivo: str
+    colunas_mascaradas: list[str]
+    preview: list[dict]

@@ -47,3 +47,17 @@ def ler_arquivo(caminho: Path, formato: str) -> pd.DataFrame:
         raise ValueError(f"Não foi possível ler o arquivo como '{formato}': {exc}") from exc
 
     raise ValueError(f"Formato '{formato}' não suportado.")
+
+
+def escrever_arquivo(df: pd.DataFrame, caminho: Path, formato: str) -> None:
+    if formato in ("csv", "txt"):
+        df.to_csv(caminho, index=False)
+        return
+    if formato in ("xlsx", "xls"):
+        df.to_excel(caminho, index=False)
+        return
+    if formato == "json":
+        df.to_json(caminho, orient="records", force_ascii=False, indent=2)
+        return
+
+    raise ValueError(f"Formato '{formato}' não suportado.")

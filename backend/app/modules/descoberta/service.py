@@ -1,8 +1,15 @@
 import re
 import unicodedata
 from dataclasses import dataclass
+from pathlib import Path
 
 import pandas as pd
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.models.arquivo_processado import ArquivoProcessado
+from app.models.coluna_classificada import ColunaClassificada
+from app.modules.importacao.service import ler_arquivo
 
 PALAVRAS_CHAVE: dict[str, list[str]] = {
     "CPF": ["cpf"],
@@ -14,7 +21,8 @@ PALAVRAS_CHAVE: dict[str, list[str]] = {
     "NOME": ["nome"],
     "ENDERECO": ["endereco", "rua", "logradouro", "cep"],
     "DATA_NASCIMENTO": ["nascimento"],
-    "CARTAO_CREDITO": ["cartao", "cvv"],
+    "CARTAO_CREDITO": ["cartao"],
+    "CVV": ["cvv"],
     "SENHA": ["senha"],
     "PIX": ["pix"],
     "DADO_FINANCEIRO": ["salario", "conta", "agencia", "banco"],
@@ -95,3 +103,30 @@ def classificar_coluna(nome_coluna: str, valores: pd.Series) -> ColunaClassifica
 
 def analisar_dataframe(df: pd.DataFrame) -> list[ColunaClassificadaDTO]:
     return [classificar_coluna(str(coluna), df[coluna]) for coluna in df.columns]
+
+
+def obter_ou_criar_classificacao(db: Session, arquivo: ArquivoProcessado) -> list[ColunaClassificada]:
+    """Reaproveitado pelo Módulo de Mascaramento: usa a classificação já salva,
+    ou roda a análise na hora se o arquivo nunca passou pelo Módulo 2."""
+    stmt = select(ColunaClassificada).where(ColunaClassificada.arquivo_id == arquivo.id)
+    registros = list(db.scalars(stmt))
+    if registros:
+        return registros
+
+    df = ler_arquivo(Path(arquivo.caminho_armazenado), arquivo.formato)
+    classificacoes = analisar_dataframe(df)
+
+    registros = [
+        ColunaClassificada(
+            arquivo_id=arquivo.id,
+            nome_coluna=c.nome_coluna,
+            sensivel=c.sensivel,
+            tipo_dado=c.tipo_dado,
+        )
+        for c in classificacoes
+    ]
+    db.add_all(registros)
+    db.commit()
+    for registro in registros:
+        db.refresh(registro)
+    return registros
