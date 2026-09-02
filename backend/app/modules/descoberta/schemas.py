@@ -1,13 +1,18 @@
-from pydantic import BaseModel
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict
 
 
-class ColunaAnalisada(BaseModel):
-    coluna: str
-    tipo_dado: str
+class ColunaClassificadaResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    nome_coluna: str
     sensivel: bool
+    tipo_dado: str | None
 
 
 class DescobertaResponse(BaseModel):
-    mensagem: str
-    tipos_detectaveis: list[str]
-    colunas: list[ColunaAnalisada]
+    arquivo_id: int
+    nome_arquivo: str
+    colunas: list[ColunaClassificadaResponse]
+    criado_em: datetime
