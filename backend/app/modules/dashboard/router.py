@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.arquivo_processado import ArquivoProcessado
+from app.models.arquivo_sintetico import ArquivoSintetico
 from app.models.coluna_classificada import ColunaClassificada
 from app.modules.dashboard.schemas import DashboardSummary
 
@@ -23,10 +24,11 @@ def get_summary(db: Session = Depends(get_db)) -> DashboardSummary:
         )
         or 0
     )
+    dados_sinteticos_gerados = db.scalar(select(func.coalesce(func.sum(ArquivoSintetico.num_linhas), 0))) or 0
     return DashboardSummary(
         arquivos_processados=arquivos_processados,
         dados_mascarados=dados_mascarados,
         dados_anonimizados=dados_anonimizados,
-        dados_sinteticos_gerados=0,
+        dados_sinteticos_gerados=dados_sinteticos_gerados,
         indice_conformidade_lgpd=0.0,
     )

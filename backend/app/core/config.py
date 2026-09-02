@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     upload_dir: str = "storage/uploads"
     masked_dir: str = "storage/masked"
     anonymized_dir: str = "storage/anonymized"
+    synthetic_dir: str = "storage/synthetic"
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="", case_sensitive=False)
 
