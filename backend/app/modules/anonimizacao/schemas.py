@@ -1,12 +1,12 @@
 from pydantic import BaseModel
 
 
-class ExemploAnonimizacao(BaseModel):
-    campo: str
-    antes: str
-    depois: str
+class AplicarAnonimizacaoRequest(BaseModel):
+    colunas: list[str] | None = None
 
 
 class AnonimizacaoResponse(BaseModel):
-    mensagem: str
-    exemplo: ExemploAnonimizacao
+    arquivo_id: int
+    nome_arquivo: str
+    colunas_anonimizadas: list[str]
+    preview: list[dict]

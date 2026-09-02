@@ -17,10 +17,16 @@ def get_summary(db: Session = Depends(get_db)) -> DashboardSummary:
         db.scalar(select(func.count()).select_from(ColunaClassificada).where(ColunaClassificada.mascarada.is_(True)))
         or 0
     )
+    dados_anonimizados = (
+        db.scalar(
+            select(func.count()).select_from(ColunaClassificada).where(ColunaClassificada.anonimizada.is_(True))
+        )
+        or 0
+    )
     return DashboardSummary(
         arquivos_processados=arquivos_processados,
         dados_mascarados=dados_mascarados,
-        dados_anonimizados=0,
+        dados_anonimizados=dados_anonimizados,
         dados_sinteticos_gerados=0,
         indice_conformidade_lgpd=0.0,
     )
