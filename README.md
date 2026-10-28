@@ -54,11 +54,49 @@ Veja o escopo completo do MVP em [docs/PRD.md](docs/PRD.md).
 ## Estrutura
 
 ```
-backend/    API FastAPI, organizada por módulo (importação, descoberta,
-            mascaramento, anonimização, sintéticos, LGPD, dashboard)
-frontend/   SPA React com um módulo por página
-docs/       Documentação de escopo (PRD)
+backend/
+  app/core/       configuração, banco (SQLAlchemy) e armazenamento de uploads
+  app/models/     modelos ORM (arquivo_processado, coluna_classificada,
+                  arquivo_mascarado, arquivo_anonimizado, arquivo_sintetico)
+  app/modules/    um pacote por módulo (router + schemas + service):
+                  importacao, descoberta, mascaramento, anonimizacao,
+                  sinteticos, lgpd, dashboard
+  alembic/        migrações do banco
+  tests/          testes (pytest) — exigem o Postgres do docker compose no ar
+frontend/
+  src/pages/      uma página por módulo
+  src/components/ Layout e ProcessamentoColunasPage (base compartilhada de
+                  Mascaramento e Anonimização)
+docs/             documentação de escopo (PRD)
 ```
+
+O código comum aos módulos que operam sobre um arquivo importado (buscar o
+arquivo, ler o DataFrame, escolher colunas-alvo, salvar a saída, preview e
+download da última versão gerada) fica em
+`backend/app/modules/importacao/helpers.py`.
+
+## API
+
+Todas as rotas ficam sob `/api` (detalhes em `/docs`, com a API rodando).
+
+| Módulo        | Rotas                                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------ |
+| Importação    | `POST /importacao/upload`, `GET /importacao/`, `GET /importacao/{id}`, `DELETE /importacao/` |
+| Descoberta    | `POST /descoberta/{id}/analisar`, `GET /descoberta/{id}`                                   |
+| Mascaramento  | `POST /mascaramento/{id}/aplicar`, `GET /mascaramento/{id}/download`                       |
+| Anonimização  | `POST /anonimizacao/{id}/aplicar`, `GET /anonimizacao/{id}/download`                       |
+| Sintéticos    | `POST /sinteticos/{id}/gerar`, `GET /sinteticos/{id}/download`                             |
+| LGPD          | `GET /lgpd/{id}`                                                                           |
+| Dashboard     | `GET /dashboard/summary`                                                                   |
+| Health-check  | `GET /health`                                                                              |
+
+## Configuração
+
+Variáveis lidas de `backend/.env` (veja `backend/.env.example`):
+`DATABASE_URL` (padrão: Postgres local do `docker-compose.yml`),
+`CORS_ORIGINS`, `UPLOAD_DIR`, `MASKED_DIR`, `ANONYMIZED_DIR` e `SYNTHETIC_DIR`
+(diretórios de saída em `storage/`). O frontend usa `VITE_API_URL`
+(padrão `http://localhost:8000`).
 
 ## Rodando localmente
 
@@ -95,9 +133,19 @@ npm run dev
 
 A aplicação sobe em `http://localhost:5173`.
 
-### 4. Testes do backend
+### 4. Testes e checagens
+
+Backend (o Postgres do passo 1 precisa estar rodando e migrado):
 
 ```
 cd backend
 .\venv\Scripts\pytest -q
+```
+
+Frontend:
+
+```
+cd frontend
+npm run lint
+npm run build      # roda tsc + build de produção
 ```

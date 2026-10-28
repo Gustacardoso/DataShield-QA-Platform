@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
@@ -13,6 +12,7 @@ from app.modules.importacao.schemas import (
     ArquivoImportadoResponse,
     ExcluirArquivosRequest,
 )
+from app.modules.importacao.helpers import buscar_arquivo, gerar_preview
 from app.modules.importacao.service import formato_da_extensao, ler_arquivo
 
 router = APIRouter(prefix="/api/importacao", tags=["Importação"])
@@ -33,7 +33,7 @@ def upload_arquivo(arquivo: UploadFile, db: Session = Depends(get_db)) -> Arquiv
         caminho_armazenado=str(caminho),
         num_linhas=len(df),
         colunas=[str(coluna) for coluna in df.columns],
-        preview=json.loads(df.head(10).to_json(orient="records", date_format="iso")),
+        preview=gerar_preview(df),
     )
     db.add(registro)
     db.commit()
@@ -50,10 +50,7 @@ def listar_arquivos(db: Session = Depends(get_db)) -> list[ArquivoProcessado]:
 
 @router.get("/{arquivo_id}", response_model=ArquivoImportadoDetalhe)
 def obter_arquivo(arquivo_id: int, db: Session = Depends(get_db)) -> ArquivoProcessado:
-    registro = db.get(ArquivoProcessado, arquivo_id)
-    if registro is None:
-        raise HTTPException(status_code=404, detail="Arquivo não encontrado")
-    return registro
+    return buscar_arquivo(arquivo_id, db)
 
 
 @router.delete("/", status_code=204)
